@@ -11,6 +11,7 @@ package physicsworld;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.collision.AABB;
+import org.jbox2d.callbacks.ContactFilter;
 public class PhysicsWorld {
     public static Game g;
     public static World world;
@@ -28,6 +29,8 @@ public class PhysicsWorld {
         Vec2 gravity = new Vec2(0.0f, -10.0f);
         boolean doSleep = true;
         world = new World(gravity,doSleep);
+        world.setContactListener(new WorldContactListener());
+        world.setContactFilter(new ContactFilter());
         g.gameSetup();
         g.gameLoop();
         // TODO code application logic here

@@ -13,30 +13,36 @@ import org.jbox2d.common.Vec2;
 import org.jbox2d.collision.shapes.PolygonShape;
 import java.awt.*;
 import java.util.*;
+
 public class Block implements Paintable {
     public Color color;
     public BodyDef bodyDef;
-    public int x1, x2, x3, x4, y1, y2, y3, y4;
-    public static Body blockBody;
+    public double width, height;
+    public Body blockBody;
     public static ArrayList blockBodies = new ArrayList();
     
     public Block(BodyDef bodyDef, World world){
   
         blockBody = world.createBody(bodyDef);
         PolygonShape dynamicBlock = new PolygonShape();
-        dynamicBlock.setAsBox(0.5f, 0.5f);
+        width = (Math.random()*0.5)+0.1;
+        height = (Math.random()*0.5)+0.1;
+        dynamicBlock.setAsBox((float)width, (float)height);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = dynamicBlock;
         fixtureDef.density = 1.0f;
         fixtureDef.friction = 0.3f;
         blockBody.createFixture(fixtureDef);
         blockBodies.add(blockBody);
-        color = Color.BLUE;
+        int c = (int)(Math.random()*100)%Game.colors.length;
+        color = (Color)Game.colors[c];
+        
   
         
     }
     @Override
     public void paint(Graphics2D g){
+        
         ArrayList xpoints = new ArrayList();
         ArrayList ypoints = new ArrayList();
         Fixture fix = blockBody.getFixtureList();
@@ -59,7 +65,7 @@ public class Block implements Paintable {
              yints[a] = (Integer) y[a];
              
          }
-        
+         
         Polygon p = new Polygon(xints, yints, 4);
         g.setColor(color);
         g.fillPolygon(p);

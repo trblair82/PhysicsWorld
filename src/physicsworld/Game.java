@@ -12,17 +12,24 @@ import java.awt.event.KeyListener;
 import org.jbox2d.dynamics.*;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.collision.shapes.PolygonShape;
+import org.jbox2d.dynamics.contacts.*;
+import org.jbox2d.callbacks.*;
+import org.jbox2d.collision.*;
 /**
  *
  * @author trblair
  */
 public class Game extends Canvas {
     private BufferStrategy buffer;
-    public int b_speed;
-    
+    public Integer keyS, keyR, keyL;
+    public static Color colors[] = {Color.BLUE,Color.GREEN,Color.ORANGE};
     private boolean gameRunning = true;
-    private ArrayList blocks;
-    public Vec2 position;
+    public static ArrayList blocks;
+    public Vec2 playerP, playerF, playerC, playerV, playerLF, jump;
+    public static Player player;
+    public static ArrayList keys = new ArrayList();
+    public static ArrayList contacts = new ArrayList();
+   
     
     
     
@@ -30,20 +37,56 @@ public class Game extends Canvas {
     public class PhysicsWorldKeyListener implements KeyListener{
         @Override
         public void keyPressed(KeyEvent e){
+            
             int key = e.getKeyCode();
+            playerLF = new Vec2(-5.0f, 0.0f);
+            playerF = new Vec2(5.0f,0.0f);
+            
+            jump = new Vec2(0.0f, 5.0f);
+            playerV = player.playerBody.getLinearVelocity();
+            playerC = player.playerBody.getWorldCenter();
             if (key == KeyEvent.VK_RIGHT){
-                b_speed = -5;
+                keyR = (Integer)key;
+                if(keys.contains(keyR)!=true){
+                    keys.add(keyR);
+                }
             }
+            if(key == KeyEvent.VK_LEFT){
+                keyL = (Integer)key;
+                if(keys.contains(keyL)!=true){
+                    keys.add(keyL);
+                }
+            }
+            if(key == KeyEvent.VK_SPACE){
+                keyS = (Integer)key;
+                if(keys.contains(keyS)!=true){
+                    keys.add(keyS);
+                }
+            }
+            
         }
         @Override
         public void keyReleased(KeyEvent e){
             int key = e.getKeyCode();
-            if(key == KeyEvent.VK_RIGHT){
-                b_speed = 0;
+            if (key == KeyEvent.VK_RIGHT){
+                
+                keys.remove(keyR);
             }
+            if(key == KeyEvent.VK_LEFT){
+                
+                keys.remove(keyL);
+            }
+            if(key == KeyEvent.VK_SPACE){
+                
+                keys.remove(keyS);
+            }
+            
         }
         @Override
         public void keyTyped(KeyEvent e){
+            
+                
+            
             
         }
     }
@@ -82,7 +125,7 @@ public class Game extends Canvas {
         
     }
     public void gameSetup(){
-        for(int i = 0; i < 4; i++){
+        for(int i = 1; i < 4; i++){
             BodyDef bodyDef = new BodyDef();
             bodyDef.type = BodyType.DYNAMIC;
             bodyDef.position.set((i*1.9f)+2.0f,6.0f);
@@ -90,7 +133,7 @@ public class Game extends Canvas {
             
             blocks.add(b);
         }
-        for(int p = 0;p<4;p++){
+        for(int p = 1;p<4;p++){
             BodyDef bodyDef = new BodyDef();
             bodyDef.type = BodyType.DYNAMIC;
             bodyDef.position.set(p*1.5f,8.0f);
@@ -105,19 +148,14 @@ public class Game extends Canvas {
         groundBlock.setAsBox(10.0f, 1.0f);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = groundBlock;
+        fixtureDef.friction = 1.0f;
         groundBody.createFixture(fixtureDef);
         
-//        BodyDef blockBodyDef = new BodyDef();
-//        blockBodyDef.position.set(1.0f, 3.0f);
-//        blockBodyDef.type = BodyType.DYNAMIC;
-//        blockBody = PhysicsWorld.world.createBody(blockBodyDef);
-//        PolygonShape dynamicBlock = new PolygonShape();
-//        dynamicBlock.setAsBox(0.5f, 0.5f);
-//        FixtureDef blockFixtureDef = new FixtureDef();
-//        blockFixtureDef.shape = dynamicBlock;
-//        blockFixtureDef.density = 1.0f;
-//        blockFixtureDef.friction = 0.3f;
-//        blockBody.createFixture(fixtureDef);
+        BodyDef playerBodyDef = new BodyDef();
+        playerBodyDef.position.set(0.5f, 0.5f);
+        playerBodyDef.type = BodyType.DYNAMIC;
+        player = new Player(playerBodyDef, PhysicsWorld.world);
+        
         
     }
     
@@ -125,7 +163,7 @@ public class Game extends Canvas {
     public void gameLoop(){
         while(gameRunning){
             long startTime = System.currentTimeMillis();
-            long fps = 60;
+            long fps = 32;
             float timeStep = (float)1.0/60.0f;
             int velocityIterations = 8;
             int positionIterations = 3;
@@ -134,15 +172,35 @@ public class Game extends Canvas {
             g.fillRect(0, 0, 800, 600);
             
             
-            
+             if(keys.contains(keyS)){
+                
+                for(int i = 0;i<contacts.size();i++){
+                    Contact contact = (Contact)contacts.get(i);
+                    Manifold manifold = contact.getManifold();
+                    
+                    if(manifold.localPoint.y>-0.1f&&playerV.y<0.1){
+                        player.playerBody.applyLinearImpulse(jump, playerC);
+                        break;
+                    }
+                }    
+                
+            }
+            if(keys.contains(keyR)){
+                player.playerBody.applyForce(playerF, playerC);
+                
+            }
+            if(keys.contains(keyL)){
+                player.playerBody.applyForce(playerLF, playerC);
+                
+            }
             for(int i = 0; i < blocks.size(); i++){
                     Block block =(Block) blocks.get(i);
-                    Block.blockBody = (Body)Block.blockBodies.get(i);
+                    
                     block.paint(g);
                     
             }
-            
-            
+            player.checkBounds();
+            player.paint(g);
             PhysicsWorld.world.step(timeStep, velocityIterations, positionIterations);
             
             
