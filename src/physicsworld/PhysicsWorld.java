@@ -32,7 +32,9 @@ public class PhysicsWorld {
         world.setContactListener(new WorldContactListener());
         world.setContactFilter(new ContactFilter());
         g.gameSetup();
+        System.out.println("main");
         g.gameLoop();
+        
         // TODO code application logic here
     }
 }

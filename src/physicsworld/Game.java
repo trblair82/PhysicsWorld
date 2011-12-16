@@ -15,22 +15,26 @@ import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.dynamics.contacts.*;
 import org.jbox2d.callbacks.*;
 import org.jbox2d.collision.*;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import javax.imageio.*;
+import java.io.File;
 /**
  *
  * @author trblair
  */
 public class Game extends Canvas {
     private BufferStrategy buffer;
-    public Integer keyS, keyR, keyL;
+    public static Integer keyS, keyR, keyL;
     public static Color colors[] = {Color.BLUE,Color.GREEN,Color.ORANGE};
     private boolean gameRunning = true;
     public static ArrayList blocks;
-    public Vec2 playerP, playerF, playerC, playerV, playerLF, jump;
+//    public static Vec2 playerP, playerF, playerC, playerV, playerLF, jump;
     public static Player player;
     public static ArrayList keys = new ArrayList();
     public static ArrayList contacts = new ArrayList();
-   
-    
+    public static long startTime;
+    public static BufferedImage spriteSheet, spriteSheetFlip;
     
     
     
@@ -39,12 +43,12 @@ public class Game extends Canvas {
         public void keyPressed(KeyEvent e){
             
             int key = e.getKeyCode();
-            playerLF = new Vec2(-5.0f, 0.0f);
-            playerF = new Vec2(5.0f,0.0f);
-            
-            jump = new Vec2(0.0f, 5.0f);
-            playerV = player.playerBody.getLinearVelocity();
-            playerC = player.playerBody.getWorldCenter();
+//            playerLF = new Vec2(-5.0f, 0.0f);
+//            playerF = new Vec2(5.0f,0.0f);
+//            
+//            jump = new Vec2(0.0f, 5.0f);
+//            playerV = player.playerBody.getLinearVelocity();
+//            playerC = player.playerBody.getWorldCenter();
             if (key == KeyEvent.VK_RIGHT){
                 keyR = (Integer)key;
                 if(keys.contains(keyR)!=true){
@@ -124,6 +128,25 @@ public class Game extends Canvas {
         
         
     }
+    public static BufferedImage loadImage(String ref) {  
+        BufferedImage bimg = null;  
+        try {  
+  
+            bimg = ImageIO.read(new File(ref));  
+        } catch (Exception e) {  
+             
+        }  
+        return bimg;  
+    }
+    public static BufferedImage horizontalflip(BufferedImage img) {  
+        int w = img.getWidth();  
+        int h = img.getHeight();  
+        BufferedImage dimg = new BufferedImage(w, h, img.getType());  
+        Graphics2D g = dimg.createGraphics();  
+        g.drawImage(img, 0, 0, w, h, w, 0, 0, h, null);  
+        g.dispose();  
+        return dimg;  
+    }  
     public void gameSetup(){
         for(int i = 1; i < 4; i++){
             BodyDef bodyDef = new BodyDef();
@@ -150,11 +173,19 @@ public class Game extends Canvas {
         fixtureDef.shape = groundBlock;
         fixtureDef.friction = 1.0f;
         groundBody.createFixture(fixtureDef);
+        spriteSheet = Game.loadImage("images/TransparentRoadRunner.png");
         
         BodyDef playerBodyDef = new BodyDef();
         playerBodyDef.position.set(0.5f, 0.5f);
         playerBodyDef.type = BodyType.DYNAMIC;
         player = new Player(playerBodyDef, PhysicsWorld.world);
+        Player.currentAnim = Player.rightStopped;
+        AnimationThread animRun = new AnimationThread();
+        Thread animThread = new Thread(animRun);
+        System.out.println("start");
+        animThread.start();
+        
+        
         
         
     }
@@ -162,44 +193,46 @@ public class Game extends Canvas {
     
     public void gameLoop(){
         while(gameRunning){
-            long startTime = System.currentTimeMillis();
+            startTime = System.currentTimeMillis();
             long fps = 32;
             float timeStep = (float)1.0/60.0f;
             int velocityIterations = 8;
             int positionIterations = 3;
             Graphics2D g = (Graphics2D) buffer.getDrawGraphics();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setColor(Color.black); 
             g.fillRect(0, 0, 800, 600);
             
             
-             if(keys.contains(keyS)){
-                
-                for(int i = 0;i<contacts.size();i++){
-                    Contact contact = (Contact)contacts.get(i);
-                    Manifold manifold = contact.getManifold();
-                    
-                    if(manifold.localPoint.y>-0.1f&&playerV.y<0.1){
-                        player.playerBody.applyLinearImpulse(jump, playerC);
-                        break;
-                    }
-                }    
-                
-            }
-            if(keys.contains(keyR)){
-                player.playerBody.applyForce(playerF, playerC);
-                
-            }
-            if(keys.contains(keyL)){
-                player.playerBody.applyForce(playerLF, playerC);
-                
-            }
+//             if(keys.contains(keyS)){
+//                
+//                for(int i = 0;i<contacts.size();i++){
+//                    Contact contact = (Contact)contacts.get(i);
+//                    Manifold manifold = contact.getManifold();
+//                    
+//                    if(manifold.localPoint.y>-0.1f&&playerV.y<0.1){
+//                        player.playerBody.applyLinearImpulse(jump, playerC);
+//                        break;
+//                    }
+//                }    
+//                
+//            }
+//            if(keys.contains(keyR)){
+//                player.playerBody.applyForce(playerF, playerC);
+//                
+//            }
+//            if(keys.contains(keyL)){
+//                player.playerBody.applyForce(playerLF, playerC);
+//                
+//            }
             for(int i = 0; i < blocks.size(); i++){
                     Block block =(Block) blocks.get(i);
                     
                     block.paint(g);
                     
             }
-            player.checkBounds();
+            player.update();
+//            player.checkBounds();
             player.paint(g);
             PhysicsWorld.world.step(timeStep, velocityIterations, positionIterations);
             

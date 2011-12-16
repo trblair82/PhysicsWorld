@@ -19,18 +19,26 @@ public class WorldContactListener implements ContactListener {
     }
     @Override
     public void beginContact(Contact contact){
-        if(contact.getFixtureA()== Game.player.playerBody.m_fixtureList){
+        if(contact.getFixtureA().getUserData() == Game.player.sensorFixture.getUserData()
+                &&contact.getFixtureB() != Game.player.playerBody.m_fixtureList){
             Game.contacts.add(contact);
         
         }
-        if(contact.getFixtureB() == Game.player.playerBody.m_fixtureList){
+        if(contact.getFixtureB().getUserData() == Game.player.sensorFixture.getUserData()
+                &&contact.getFixtureA() != Game.player.playerBody.m_fixtureList){
             Game.contacts.add(contact);
         }
     }
     
     @Override
     public void endContact(Contact contact){
-        Game.contacts.remove(contact);
+        if(contact.getFixtureA().getUserData() == Game.player.sensorFixture.getUserData()){
+            Game.contacts.remove(contact);
+        
+        }
+        if(contact.getFixtureB().getUserData() == Game.player.sensorFixture.getUserData()){
+            Game.contacts.remove(contact);
+        }
     }
     
     @Override
