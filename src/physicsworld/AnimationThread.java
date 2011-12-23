@@ -8,16 +8,16 @@ package physicsworld;
  *
  * @author trblair
  */
-import java.awt.*;
-public class AnimationThread implements Runnable {
-    public long delta_t, cur_t, startTime;
+
+public class AnimationThread implements Runnable {//overrides run function to add to my animation thread
+    public long delta_t, cur_t, startTime;//variables for timer
     public AnimationThread(){
         
     }
     @Override
     public void run(){
-        startTime = System.currentTimeMillis();
-        System.out.println("in");
+        startTime = System.currentTimeMillis();//system time
+        //updates my player animation 5 times per second in separate thread from game
         do{
              cur_t = System.currentTimeMillis();
              delta_t = (cur_t - startTime);
