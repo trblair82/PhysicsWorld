@@ -23,7 +23,7 @@ import java.io.File;
  */
 public class Game extends Canvas {
     private BufferStrategy buffer;
-    
+    public static Vec2 worldP;
     public static Integer keyS, keyR, keyL;//variables for key presses
     public static Color colors[] = {Color.BLUE,Color.GREEN,Color.ORANGE};//list of colors for dynamic polygons
     private boolean gameRunning = true;//boolean for game loop
@@ -32,9 +32,10 @@ public class Game extends Canvas {
     public BodyDef polyBodyDef;//body definition for dynamic polygons
     public static Player player;//static player object
     public static ArrayList keys = new ArrayList();//list for key presses
-    public static ArrayList footContacts = new ArrayList();//list for player foot contacts
+    
     public static ArrayList bodyContacts = new ArrayList();//list for player body contacts
-    public static ArrayList headContacts = new ArrayList();//list for player head contacts
+    private float critHit = 5;
+    private float jump = 0.75f;
     public static ArrayList lifeIcons = new ArrayList();//list for life icons
     public static long startTime;//variable for system time
     public static BufferedImage spriteSheet, ground, background, gameover;//images used in game
@@ -46,6 +47,12 @@ public class Game extends Canvas {
     public static int mpRatio = 100;//100 pixles to 1 meter
     public static int screenH = 600;//screen height
     public static int screenW = 800;//screen width
+    private long levelTime = 60000;
+    private long levelTimer = 0;
+    public static long jumpTimer = 0;
+    public static boolean canJump;
+    public float velocity;
+    public static Vec2 jumpForce = new Vec2();
     public Integer score = 0;//variable to track score
     public static int iconStart = 6;//render first life icon at 600 x
     public static float degrees;//variable to track degree of rotation for player image display
@@ -139,9 +146,9 @@ public class Game extends Canvas {
     
     //sets up starting components of game, ie..player, polygons
     public void gameSetup(){
-            Vec2 a = new Vec2(1.0f,0.0f);//vertices for triangle shape
+            Vec2 a = new Vec2(0.5f,0.0f);//vertices for triangle shape
             Vec2 b = new Vec2(1.0f,-1.0f);
-            Vec2 c = new Vec2(1.7f,-0.5f);
+            Vec2 c = new Vec2(2.0f,-0.5f);
             polyBodyDef = new BodyDef();//body definition for DynamicPolygon
             polyBodyDef.type = BodyType.DYNAMIC;//sets DynamicPolygons to dynamic
             vertices[0]= a;vertices[1]=b;vertices[2]=c;//adds triangle vertices to a Vec2 array
@@ -149,7 +156,7 @@ public class Game extends Canvas {
             dynamicTriangle.set(vertices, 3);//makes polygon a triangle
             dynamicPolygon = new PolygonShape();//creates polygon for use with blocks
         for(int i = 1; i < 8; i++){//creates 8 randomly sized and positioned blocks
-            polygonPos.x = (float)(Math.random()*12.0f)+offset;//random x position
+            polygonPos.x = (float)(Math.random()*12.0f)+offset+1;//random x position
             polygonPos.y = 8.0f;//set y position
             polyBodyDef.position.set(polygonPos);//set start position of DynamicPolygons
             
@@ -161,7 +168,7 @@ public class Game extends Canvas {
             polygons.add(p);//adds polygon to render array
         }
         for(int i = 1; i < 8; i++){//creates 8 randomly positioned triangles
-            polygonPos.x = (float)(Math.random()*12.0f)+offset;
+            polygonPos.x = (float)(Math.random()*12.0f)+offset+1;
             polygonPos.y = 9.0f;
             polyBodyDef.position.set(polygonPos);//sets start position
             DynamicPolygon t = new DynamicPolygon(polyBodyDef, dynamicTriangle);//creates new dynamicpolygon that is a triangle
@@ -194,8 +201,14 @@ public class Game extends Canvas {
     public void gameLoop(){
         gameThread = Thread.currentThread();//sets gameThread to main thread
         while(gameRunning){
+            
+            
+            long current = startTime;
             startTime = System.currentTimeMillis();//gets system time
+            levelTimer += startTime - current;
+            jumpTimer += startTime - current;
             long fps = 32;//my frames per second limit
+            
             float timeStep = (float)1.0/60.0f;//variables for stepping physics world
             int velocityIterations = 8;
             int positionIterations = 3;
@@ -224,7 +237,7 @@ public class Game extends Canvas {
                 contact.getWorldManifold(wm);//gets the world for each contact
                 float wx = wm.points[0].x;
                 float wy = wm.points[0].y;
-                Vec2 worldP = new Vec2(wx,wy);//creates vector2 from first point of contact in world manifold
+                worldP = new Vec2(wx,wy);//creates vector2 from first point of contact in world manifold
                 Vec2 localP = player.playerBody.getLocalPoint(worldP);//gets player local point from contact world point
                 float x = localP.x;//sets x and y to x and y of player local point
                 float y = localP.y;
@@ -232,15 +245,30 @@ public class Game extends Canvas {
                 //updates the acctual local point of contact based on the angle of rotation of player
                 float px =(float)(Math.cos(angle) * (x-0.0f) - Math.sin(angle) * (y-0.0));
                 float py =(float)(Math.sin(angle) * (x-0.0f) + Math.cos(angle) * (y-0.0));
+                jumpForce.x = -px;
+                jumpForce.y = jump;
                 //finds the length of the hypotnues
                 float hyp = (float)Math.sqrt((Math.pow((double)px, 2))+(Math.pow((double)py, 2)));
                 //finds andgle to display player image based on angle of contact surface
                 float ratio = px/hyp;
                 //sets degree of image rotatin if contact is on bottom half of player
-                if(py<-0.1){degrees = (float)(Math.asin((double)ratio));break;}
+                if(py<-0.1){degrees = (float)(Math.asin((double)ratio));
+                canJump = true;}
+                if(contact.getFixtureA().getUserData() == player.playerFixture.getUserData()){
+                Body hit = contact.getFixtureB().getBody();//if head sensor is fixture A
+                Vec2 hitV = hit.getLinearVelocity();//get velocity of fixture B
+                velocity = hitV.y;//assign velocity to fixture B y velocity
+                }
+                if(contact.getFixtureB().getUserData() == player.playerFixture.getUserData()){
+                Body hit = contact.getFixtureA().getBody();//if head sensot is fixture B
+                Vec2 hitV = hit.getLinearVelocity();//get velocity of fixture A
+                velocity = hitV.y;//assign velocity to fixtue A y velocity
+
+                }
+                if(py>0.1&&Math.abs(velocity)>critHit){Player.dead = true;Player.justDied = true;}
             }
             //sets degree of image rotation to 0 if player is in the air
-            if(bodyContacts.isEmpty()){degrees = 0.0f;}
+            if(bodyContacts.isEmpty()){degrees = 0.0f;canJump = false;}
             //updates player
             player.update();
             //paints ground images
@@ -253,8 +281,26 @@ public class Game extends Canvas {
                 BufferedImage icon = (BufferedImage)lifeIcons.get(i);
                 g.drawImage(icon, null, (i+iconStart)*icon.getWidth(this)+5, 5);
             }
-            //adds new dynamic polygon if render list is less than 16
-            if(polygons.size()<16){
+            
+            if(levelTimer>levelTime){
+                levelTimer = 0;
+                levelTime -= 1000;
+                polygonPos.x = (float)(Math.random()*8.0f)+offset;
+                polyBodyDef.position.set(polygonPos);//sets posistion to random
+                double width = (Math.random()*0.5)+0.1;
+                double height = (Math.random()*0.5)+0.1;
+                dynamicPolygon.setAsBox((float)width, (float)height);//sets size to random
+                DynamicPolygon c = new DynamicPolygon(polyBodyDef,dynamicPolygon);//creates new polygon
+                polygons.add(c);//adds to render list
+                polygonPos.x = (float)(Math.random()*8.0f)+offset;
+                polyBodyDef.position.set(polygonPos);//sets triangle to random positon
+                DynamicPolygon t = new DynamicPolygon(polyBodyDef, dynamicTriangle);//creates new triangle
+                polygons.add(t);//adds to render list 
+                
+            }
+            //adds new dynamic polygon if render list is less than 8
+            
+            if(polygons.size()<8){
                 polygonPos.x = (float)(Math.random()*24.0f)+offset;
                 polyBodyDef.position.set(polygonPos);//sets posistion to random
                 double width = (Math.random()*0.5)+0.1;
@@ -292,6 +338,7 @@ public class Game extends Canvas {
                PhysicsWorld.world.step(timeStep, velocityIterations, positionIterations); 
             }
             
+            
             //sets frames per second to my fps variable
             long fps_lim = (long)(1000/fps);
             long cur_t;
@@ -299,8 +346,11 @@ public class Game extends Canvas {
             do{
              cur_t = System.currentTimeMillis();//
              delta_t = (cur_t - startTime);
+             
+             
             }while(delta_t < fps_lim);
         }
+        
     }
     
     }

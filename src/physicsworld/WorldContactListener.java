@@ -21,34 +21,13 @@ public class WorldContactListener implements ContactListener {
     }
     @Override
     public void beginContact(Contact contact){//adds contact to list when contact begins
-        //if contact fixture A is player foot add to footcontacts list
-        if(contact.getFixtureA().getUserData() == Game.player.footFixture.getUserData()
-                &&contact.getFixtureB().getUserData() != Game.player.playerFixture.getUserData()){
-            Game.footContacts.add(contact);
-            
-        }//if contact fixture B is player foot add to footcontacts list
-        if(contact.getFixtureB().getUserData() == Game.player.footFixture.getUserData()
-                &&contact.getFixtureA().getUserData() != Game.player.playerFixture.getUserData()){
-            Game.footContacts.add(contact);
-            
-        }//if contact fixture A is player head add contact to headcontacts list
-        if(contact.getFixtureA().getUserData() == Game.player.headFixture.getUserData()
-                &&contact.getFixtureB().getUserData() != Game.player.playerFixture.getUserData()){
-            Game.headContacts.add(contact);
-        }//if contact fixture B is player head add contact to headcontacts list
-        if(contact.getFixtureB().getUserData() == Game.player.headFixture.getUserData()
-                &&contact.getFixtureA().getUserData() != Game.player.playerFixture.getUserData()){
-            Game.headContacts.add(contact);
-        }//if contac fixture A is player add contact to bodycontacts list
-        if(contact.getFixtureA().getUserData() == Game.player.playerFixture.getUserData()
-                &&contact.getFixtureB().getUserData() != Game.player.headFixture.getUserData()
-                &&contact.getFixtureB().getUserData() != Game.player.footFixture.getUserData()){
+        
+        //if contac fixture A is player add contact to bodycontacts list
+        if(contact.getFixtureA().getUserData() == Game.player.playerFixture.getUserData()){
             Game.bodyContacts.add(contact);
         
         }//if contact fixture B is player add contact to bodycontacts list
-        if(contact.getFixtureB().getUserData() == Game.player.playerFixture.getUserData()
-                &&contact.getFixtureA().getUserData() != Game.player.headFixture.getUserData()
-                &&contact.getFixtureA().getUserData() != Game.player.footFixture.getUserData()){
+        if(contact.getFixtureB().getUserData() == Game.player.playerFixture.getUserData()){
             Game.bodyContacts.add(contact);
         }
         
@@ -56,29 +35,16 @@ public class WorldContactListener implements ContactListener {
     
     @Override
     public void endContact(Contact contact){//removes contacts from list when contact has ended
-        //if contact fixture A is player foot remove contact from footcontacts list
-        if(contact.getFixtureA().getUserData() == Game.player.footFixture.getUserData()){
-            Game.footContacts.remove(contact);
-        
-        }//if contact fixture B is player foot remove contact from footcontacts list
-        if(contact.getFixtureB().getUserData() == Game.player.footFixture.getUserData()){
-            Game.footContacts.remove(contact);
-        }//if contact fixture A is player remove contact from bodycontacts list
+        //if contact fixture A is player remove contact from bodycontacts list
         if(contact.getFixtureA().getUserData() == Game.player.playerFixture.getUserData()){
             Game.bodyContacts.remove(contact);
-//            
+            Game.canJump = false; 
         }//if contact fixture B is player remoce contact from bodycontacs list
         if(contact.getFixtureB().getUserData() == Game.player.playerFixture.getUserData()){
             Game.bodyContacts.remove(contact);
+            Game.canJump = false;
 //            
-        }//if contact fixture A is player head remove contact from headcontacts list
-        if(contact.getFixtureA().getUserData() == Game.player.headFixture.getUserData()){
-            Game.headContacts.remove(contact);
-        
-        }//if contact fixture B is player head remoce contact from headcontacts list
-        if(contact.getFixtureB().getUserData() == Game.player.headFixture.getUserData()){
-            Game.headContacts.remove(contact);
-        }   
+        }
     }
     
     @Override

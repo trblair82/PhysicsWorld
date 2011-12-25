@@ -26,7 +26,7 @@ public class DynamicPolygon implements Paintable {//implements paintable and ove
         polyBody.setAngularVelocity((float)Math.random()*3);//sets random angle of rotation
         FixtureDef fixtureDef = new FixtureDef();//creates fixture definiton
         fixtureDef.shape = polyShape;//sets given shape to fixture definition
-        fixtureDef.density = 1.0f;//sets mass
+        fixtureDef.density = 2.0f;//sets mass
         fixtureDef.friction = 0.3f;//sets friction
         polyFixture = polyBody.createFixture(fixtureDef);//adds fixture to polygon
         polyFixture.setUserData(4);//sets pointer to polygon fixtue
